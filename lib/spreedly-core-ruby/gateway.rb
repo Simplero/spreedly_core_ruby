@@ -43,6 +43,18 @@ module SpreedlyCore
       end
     end
 
+    # Update the attributes of a gateway
+    def self.update(token, gateway_options)
+      opts = {
+        :headers => {"Content-Type" => "application/xml"},
+        :body => gateway_options.to_xml(:root => :gateway, :dasherize => false)
+      }
+
+      self.class.verify_put("/gateways/#{token}.xml", opts) do |response|
+        return new response.parsed_response["gateway"]
+      end
+    end
+
     def initialize(attrs={})
       attrs.merge!(attrs.delete("characteristics") || {})
       super(attrs)
