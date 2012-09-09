@@ -52,13 +52,13 @@ module SpreedlyCore
     end
 
     # Make a purchase against the payment method
-    def purchase(amount, currency=nil, _gateway_token=nil, ip_address=nil)
-      purchase_or_authorize(:purchase, amount, currency, _gateway_token, ip_address)
+    def purchase(amount, currency=nil, _gateway_token=nil, ip_address=nil, order_id=nil, description=nil)
+      purchase_or_authorize(:purchase, amount, currency, _gateway_token, ip_address, order_id, description)
     end
 
     # Make an authorize against payment method. You can then later capture against the authorize
-    def authorize(amount, currency=nil,  _gateway_token=nil, ip_address=nil)
-      purchase_or_authorize(:authorize, amount, currency, _gateway_token, ip_address)
+    def authorize(amount, currency=nil,  _gateway_token=nil, ip_address=nil, order_id=nil, description=nil)
+      purchase_or_authorize(:authorize, amount, currency, _gateway_token, ip_address, order_id, description)
     end
 
     # Update the attributes of a payment method
@@ -110,7 +110,7 @@ protected
       @errors = @errors.sort
     end
 
-    def purchase_or_authorize(tran_type, amount, currency, _gateway_token, ip_address)
+    def purchase_or_authorize(tran_type, amount, currency, _gateway_token, ip_address, order_id, description)
       transaction_type = tran_type.to_s
       raise "Unknown transaction type" unless %w{purchase authorize}.include?(transaction_type)
 
@@ -123,7 +123,9 @@ protected
           :payment_method_token => token,
           :amount => amount,
           :currency_code => currency,
-          :ip => ip_address
+          :ip => ip_address,
+          :order_id => order_id,
+          :description => description
         }
       }
       self.class.verify_post(path, :body => data,
