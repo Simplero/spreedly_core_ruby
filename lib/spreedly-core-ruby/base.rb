@@ -5,6 +5,8 @@ module SpreedlyCore
   class Base
     include HTTParty
     
+    attr_reader :attrs
+    
     # Net::HTTP::Options is configured to not have a body.
     # Lets give it the body it's always dreamed of
     old_verbose, $VERBOSE = $VERBOSE, nil
