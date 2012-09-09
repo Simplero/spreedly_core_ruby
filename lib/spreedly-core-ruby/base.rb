@@ -89,6 +89,7 @@ module SpreedlyCore
       attrs.each do |k, v|
         instance_variable_set("@#{k}", v)
       end
+      @attrs = attrs
       # errors may be nil, empty, a string, or an array of strings. 
       @errors = if @errors.nil? || @errors["error"].blank?
                   []
