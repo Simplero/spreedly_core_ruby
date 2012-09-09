@@ -1,8 +1,9 @@
-module SpreedlyCore
+  module SpreedlyCore
   # Abstract class for all the different spreedly core transactions
   class Transaction < Base
     attr_reader(:amount, :on_test_gateway, :created_at, :updated_at, :currency_code,
-                :succeeded, :token, :message, :transaction_type, :gateway_token,
+                :succeeded, :state, :token, :transaction_type, :order_id, :ip, :description, :callback_url,
+                :checkout_url, :redirect_url, :message, :gateway_token,
                 :response)
     alias :succeeded? :succeeded
 
