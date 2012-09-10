@@ -52,13 +52,13 @@ module SpreedlyCore
     end
 
     # Make a purchase against the payment method
-    def purchase(amount, currency=nil, _gateway_token=nil, ip_address=nil, order_id=nil, description=nil)
-      purchase_or_authorize(:purchase, amount, currency, _gateway_token, ip_address, order_id, description)
+    def purchase(amount, currency=nil, _gateway_token=nil, ip_address=nil, order_id=nil, description=nil, redirect_url=nil, callback_url=nil)
+      purchase_or_authorize(:purchase, amount, currency, _gateway_token, ip_address, order_id, description, redirect_url, callback_url)
     end
 
     # Make an authorize against payment method. You can then later capture against the authorize
-    def authorize(amount, currency=nil,  _gateway_token=nil, ip_address=nil, order_id=nil, description=nil)
-      purchase_or_authorize(:authorize, amount, currency, _gateway_token, ip_address, order_id, description)
+    def authorize(amount, currency=nil,  _gateway_token=nil, ip_address=nil, order_id=nil, description=nil, redirect_url=nil, callback_url=nil)
+      purchase_or_authorize(:authorize, amount, currency, _gateway_token, ip_address, order_id, description, redirect_url, callback_url)
     end
 
     # Update the attributes of a payment method
@@ -110,7 +110,7 @@ protected
       @errors = @errors.sort
     end
 
-    def purchase_or_authorize(tran_type, amount, currency, _gateway_token, ip_address, order_id, description)
+    def purchase_or_authorize(tran_type, amount, currency, _gateway_token, ip_address, order_id, description, redirect_url, callback_url)
       transaction_type = tran_type.to_s
       raise "Unknown transaction type" unless %w{purchase authorize}.include?(transaction_type)
 
@@ -119,13 +119,15 @@ protected
       path = "/gateways/#{_gateway_token}/#{transaction_type}.xml"
       data = {
         :transaction => {
-          :transaction_type => transaction_type, 
+          :transaction_type     => transaction_type, 
           :payment_method_token => token,
-          :amount => amount,
-          :currency_code => currency,
-          :ip => ip_address,
-          :order_id => order_id,
-          :description => description
+          :amount               => amount,
+          :currency_code        => currency,
+          :ip                   => ip_address,
+          :order_id             => order_id,
+          :description          => description,
+          :redirect_url         => redirect_url,
+          :callback_url         => callback_url
         }
       }
       self.class.verify_post(path, :body => data,
