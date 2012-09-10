@@ -1,4 +1,6 @@
-  module SpreedlyCore
+require 'digest/sha1'
+
+module SpreedlyCore
   # Abstract class for all the different spreedly core transactions
   class Transaction < Base
     attr_reader(:amount, :on_test_gateway, :created_at, :updated_at, :currency_code,
@@ -146,5 +148,30 @@
     handles "AddPaymentMethod"
     attr_reader :payment_method
   end
-  
+
+  class OffsitePurchaseTransaction < Transaction
+    include NullifiableTransaction
+    include HasIpAddress
+
+    handles "OffsitePurchase"
+    attr_reader :payment_method, :setup_response, :redirect_response, :callback_response, :signed, :api_urls, :signed
+
+    def initialize(attrs={})
+      @payment_method = PaymentMethod.new(attrs.delete("payment_method") || {})
+      @setup_response = Response.new(attrs.delete("setup_response") || {})
+      @redirect_response = Response.new(attrs.delete("redirect_response") || {})
+      @callback_response = Response.new(attrs.delete("callback_response") || {})
+      super(attrs)
+    end
+    
+    # CALVIN: This doesn't make any sense - we must add the secret key or something here, but the API doc doesn't say anything about this
+    def valid_signature?
+      string = signed['fields'].map { |field| instance_variable_get("@#{field}") }.join("")
+      hash = case signed['algorithm']
+      when 'sha1' then Digest::SHA1.hexdigest(string)
+      else raise "Unknown algorithm #{signed['algorithm']}"
+      end
+      signed.signature == hash
+    end
+  end
 end
