@@ -1,4 +1,4 @@
-require 'digest/sha1'
+require 'openssl'
 
 module SpreedlyCore
   # Abstract class for all the different spreedly core transactions
@@ -164,14 +164,9 @@ module SpreedlyCore
       super(attrs)
     end
     
-    # CALVIN: This doesn't make any sense - we must add the secret key or something here, but the API doc doesn't say anything about this
-    def valid_signature?
-      string = signed['fields'].map { |field| instance_variable_get("@#{field}") }.join("")
-      hash = case signed['algorithm']
-      when 'sha1' then Digest::SHA1.hexdigest(string)
-      else raise "Unknown algorithm #{signed['algorithm']}"
-      end
-      signed.signature == hash
+    def valid_signature?(key)
+      signature_data = signed['fields'].map { |field| instance_variable_get("@#{field}") }.join("|")
+      signed.signature == OpenSSL::HMAC.hexdigest(OpenSSL::Digest::Digest.new(signed['algorithm']), key, signature_data)
     end
   end
 end
