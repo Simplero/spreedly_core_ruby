@@ -1,6 +1,6 @@
 SpreedlyCore
 ======
-spreedly-core-ruby is a Ruby library for accessing the [Spreedly Core API](https://spreedlycore.com/). Spreedly Core is a Software-as-a-Service billing solution that serves two major functions for companies and developers.
+spreedly_core_ruby is a Ruby library for accessing the [Spreedly Core API](https://spreedlycore.com/). Spreedly Core is a Software-as-a-Service billing solution that serves two major functions for companies and developers.
 
 * First, it removes your [PCI Compliance](https://www.pcisecuritystandards.org/) requirement by pushing the card data handling and storage outside of your application. This is possible by having your customers POST their credit card info to the Spreedly Core service while embedding a transparent redirect URL back to your application (see "Submit payment form" on [the quick start guide](https://spreedlycore.com/manual/quickstart)).
 * Second, it removes any possibility of your gateway locking you in by owning your customer billing data (yes, this happens). By allowing you to charge any card against whatever gateways you as a company have signed up for, you retain all of your customer data and can switch between gateways as you please. Also, expanding internationally won't require an additional technical integration with yet another gateway.
@@ -15,10 +15,10 @@ RubyGems:
 
     export SPREEDLYCORE_API_LOGIN=your_login_here
     export SPREEDLYCORE_API_SECRET=your_secret_here
-    gem install spreedly-core-ruby
+    gem install spreedly_core_ruby
     irb
     require 'rubygems'
-    require 'spreedly-core-ruby'
+    require 'spreedly_core_ruby'
     SpreedlyCore.configure
 
 The first thing we'll need to do is set up a test gateway that we can run transactions against. Then, we'll tell the gem to use the newly created gateway for all future calls.
@@ -215,7 +215,7 @@ The example below illustrates both a successful payment method creation, and how
 
 Contributing
 ------------
-1. [Fork](http://help.github.com/forking/) spreedly-core-ruby
+1. [Fork](http://help.github.com/forking/) spreedly_core_ruby
 2. Create a topic branch - `git checkout -b my_branch`
 3. Make your changes on your topic branch.
 4. DO NOT bump the version number, or put it in a separate commit that I can ignore.

@@ -2,11 +2,11 @@ $LOAD_PATH.unshift 'lib'
 require "spreedly_core_ruby/version"
 
 Gem::Specification.new do |s|
-  s.name              = "spreedly-core-ruby"
+  s.name              = "spreedly_core_ruby"
   s.version           = SpreedlyCore::VERSION
   s.date              = Time.now.strftime('%Y-%m-%d')
   s.summary           = "Ruby interface for Spreedly Core"
-  s.homepage          = "http://github.com/spreedly/spreedly-core-ruby"
+  s.homepage          = "http://github.com/larspind/spreedly_core_ruby"
   s.email             = "support@spreedly.com"
   s.authors           = [ "Spreedly", "403 Labs" ]
   s.description       = "Spreedly Core is a cloud service that allows you to store credit cards and run transactions against them, enabling you to accept payments on your website while avoiding all liability and PCI compliance requirements."
