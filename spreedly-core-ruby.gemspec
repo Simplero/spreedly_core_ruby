@@ -1,5 +1,5 @@
 $LOAD_PATH.unshift 'lib'
-require "spreedly_core_Ruby/version"
+require "spreedly_core_ruby/version"
 
 Gem::Specification.new do |s|
   s.name              = "spreedly-core-ruby"

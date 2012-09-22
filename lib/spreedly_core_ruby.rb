@@ -3,12 +3,12 @@ require 'set'
 require 'httparty'
 require 'active_support/core_ext/hash/conversions'
 
-require 'spreedly_core_Ruby/base'
-require 'spreedly_core_Ruby/payment_method'
-require 'spreedly_core_Ruby/gateway'
-require 'spreedly_core_Ruby/test_extensions'
-require 'spreedly_core_Ruby/test_gateway'
-require 'spreedly_core_Ruby/transactions'
+require 'spreedly_core_ruby/base'
+require 'spreedly_core_ruby/payment_method'
+require 'spreedly_core_ruby/gateway'
+require 'spreedly_core_ruby/test_extensions'
+require 'spreedly_core_ruby/test_gateway'
+require 'spreedly_core_ruby/transactions'
 require 'active_support/core_ext/hash/conversions'
 
 module SpreedlyCore
