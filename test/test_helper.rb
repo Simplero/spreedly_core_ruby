@@ -8,8 +8,8 @@ Bundler.setup(:default, :development)
 Bundler.require(:default, :development)
 
 $LOAD_PATH.unshift File.dirname(__FILE__) + '/../lib'
-require 'spreedly-core-ruby'
-require 'spreedly-core-ruby/test_extensions'
+require 'spreedly_core_Ruby'
+require 'spreedly_core_Ruby/test_extensions'
 require 'test_factory'
 
 require 'webmock/test_unit'

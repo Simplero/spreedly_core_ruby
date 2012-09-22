@@ -1,4 +1,4 @@
-require 'spreedly-core-ruby/version'
+require 'spreedly_core_Ruby/version'
 
 module SpreedlyCore
   # Base class for all SpreedlyCore API requests
