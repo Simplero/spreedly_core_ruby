@@ -106,10 +106,9 @@ module SpreedlyCore
   
       assert transaction = payment_method.purchase(100)
       assert !transaction.succeeded?
-      assert_equal("Unable to obtain a successful response from the gateway.",
-                   transaction.message)
-  
-      assert_equal("Unable to process the transaction.", transaction.response.message)
+
+      assert_equal "Unable to process the transaction.", transaction.message, transaction.inspect
+      assert_equal "Unable to process the transaction.", transaction.response.message, transaction.inspect
     end
   
     def test_can_capture_after_authorize

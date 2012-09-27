@@ -9,7 +9,6 @@ require 'spreedly_core_ruby/gateway'
 require 'spreedly_core_ruby/test_extensions'
 require 'spreedly_core_ruby/test_gateway'
 require 'spreedly_core_ruby/transactions'
-require 'active_support/core_ext/hash/conversions'
 
 module SpreedlyCore
   # Hash of user friendly credit card name to SpreedlyCore API name

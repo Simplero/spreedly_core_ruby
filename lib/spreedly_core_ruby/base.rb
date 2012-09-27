@@ -15,8 +15,8 @@ module SpreedlyCore
     
     format :xml
 
-    # timeout requests after 10 seconds
-    default_timeout 10
+    # timeout requests after 20 seconds
+    default_timeout 20
 
     base_uri "https://spreedlycore.com/#{SpreedlyCore::API_VERSION}"
 
@@ -63,7 +63,7 @@ module SpreedlyCore
       begin
         response = self.send(request_type, path, options)
       rescue Timeout::Error, Errno::ETIMEDOUT => e
-        raise TimeOutError.new("Request to #{path} timed out. Is Spreedly Core down?")
+        raise TimeOutError.new("#{request_type.to_s.upcase } to #{path} timed out. Is Spreedly Core down?")
       end
         
       if allowed_codes.any? && !allowed_codes.include?(response.code)
