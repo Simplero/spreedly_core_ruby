@@ -17,9 +17,9 @@ Gem::Specification.new do |s|
   s.files            += Dir.glob("man/**/*")
   s.files            += Dir.glob("test/**/*")
 
-  s.add_runtime_dependency     'httparty' ;# Calivn 2012-09-25: Let's try without this:, '0.7.7'
-  s.add_runtime_dependency     'builder'
+  s.add_runtime_dependency     'httparty'
   s.add_development_dependency 'activesupport'
+  s.add_runtime_dependency     'builder'
 
   s.add_development_dependency "ruby-debug#{RUBY_VERSION =~ /1.9.\d/ ? "19" : ""}"
   s.add_development_dependency 'rake'
