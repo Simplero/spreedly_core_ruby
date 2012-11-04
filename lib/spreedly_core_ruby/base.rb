@@ -1,6 +1,8 @@
-require 'spreedly_core_ruby/version'
-
 module SpreedlyCore
+
+  # Which version of the SpreedlyCore API are we targeting
+  API_VERSION = "v1"
+
   # Base class for all SpreedlyCore API requests
   class Base
     include HTTParty
