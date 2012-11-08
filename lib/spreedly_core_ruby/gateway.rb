@@ -55,6 +55,18 @@ module SpreedlyCore
       end
     end
 
+    # Redact sensitive attributes of a gateway
+    def self.redact(token)
+      opts = {
+        :headers => {"Content-Type" => "application/xml"},
+        :body => gateway_options.to_xml(:root => :gateway, :dasherize => false)
+      }
+
+      self.class.verify_post("/gateways/#{token}/redact.xml", opts) do |response|
+        return new response.parsed_response["gateway"]
+      end
+    end
+
     def initialize(attrs={})
       attrs.merge!(attrs.delete("characteristics") || {})
       super(attrs)
