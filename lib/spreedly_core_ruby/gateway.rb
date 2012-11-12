@@ -50,14 +50,14 @@ module SpreedlyCore
         :body => gateway_options.to_xml(:root => :gateway, :dasherize => false)
       }
 
-      self.class.verify_put("/gateways/#{token}.xml", opts) do |response|
+      verify_put("/gateways/#{token}.xml", opts) do |response|
         return new response.parsed_response["gateway"]
       end
     end
 
     # Redact sensitive attributes of a gateway
     def self.redact(token)
-      self.class.verify_put("/gateways/#{token}/redact.xml", body: {}, has_key: 'transaction') do |response|
+      verify_put("/gateways/#{token}/redact.xml", body: {}, has_key: 'transaction') do |response|
         return new response.parsed_response["transaction"]
       end
     end
