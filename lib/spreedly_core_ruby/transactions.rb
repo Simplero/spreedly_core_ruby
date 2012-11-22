@@ -164,9 +164,27 @@ module SpreedlyCore
       super(attrs)
     end
     
-    def valid_signature?(key)
-      signature_data = signed['fields'].split(/ /).map { |field| instance_variable_get("@#{field}") }.join("|")
-      signed['signature'] == OpenSSL::HMAC.hexdigest(OpenSSL::Digest::Digest.new(signed['algorithm']), key, signature_data)
+    def signature_for(secret, xml)
+      document = Nokogiri::XML(xml)
+      algorithm = document.xpath("//transaction/signed/algorithm").text
+
+      fields = document.xpath("//transaction/signed/fields").text.split(" ")
+
+      values = fields.collect do |field|
+        document.xpath("//transaction/#{field}").text
+      end
+
+      signature_data = values.join("|")
+      OpenSSL::HMAC.hexdigest(
+        OpenSSL::Digest.new(algorithm),
+        secret,
+        signature_data
+      )
+    end
+    
+    def valid_signature?(secret, xml)
+      signed['signature'] == signature_for(secret, xml)
     end
   end
 end
+
