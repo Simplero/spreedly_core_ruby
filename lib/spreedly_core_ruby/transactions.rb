@@ -166,7 +166,7 @@ module SpreedlyCore
     
     def valid_signature?(key)
       signature_data = signed['fields'].split(/ /).map { |field| instance_variable_get("@#{field}") }.join("|")
-      signed.signature == OpenSSL::HMAC.hexdigest(OpenSSL::Digest::Digest.new(signed['algorithm']), key, signature_data)
+      signed['signature'] == OpenSSL::HMAC.hexdigest(OpenSSL::Digest::Digest.new(signed['algorithm']), key, signature_data)
     end
   end
 end
