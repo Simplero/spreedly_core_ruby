@@ -25,6 +25,12 @@ module SpreedlyCore
         klass.new(attrs)
       end
     end
+
+    def self.transcript(token)
+      verify_get("/transactions/#{token}/transcript", format: :text) do |response|
+        response.body
+      end
+    end
   end
 
   class RetainTransaction < Transaction
