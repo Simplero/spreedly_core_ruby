@@ -69,7 +69,7 @@ module SpreedlyCore
       end
         
       if allowed_codes.any? && !allowed_codes.include?(response.code)
-        raise InvalidResponse.new(response, "Error retrieving #{path}. Got status of #{response.code}. Expected status to be in #{allowed_codes.join(",")}")
+        raise InvalidResponse.new(response, "Error retrieving #{request_type.to_s.upcase} #{base_uri}#{path}. Got status of #{response.code}. Expected status to be in #{allowed_codes.join(",")}. Headers: #{response.headers.inspect}. Request: #{response.request.inspect}. Response: #{response.inspect}")
       end
 
       if options.has_key?(:has_key) &&
