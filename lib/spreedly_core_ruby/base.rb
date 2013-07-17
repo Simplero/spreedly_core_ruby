@@ -1,13 +1,7 @@
 module SpreedlyCore
-
-  # Which version of the SpreedlyCore API are we targeting
-  API_VERSION = "v1"
-
   # Base class for all SpreedlyCore API requests
   class Base
     include HTTParty
-    
-    attr_reader :attrs
     
     # Net::HTTP::Options is configured to not have a body.
     # Lets give it the body it's always dreamed of
@@ -16,19 +10,16 @@ module SpreedlyCore
     $VERBOSE = old_verbose
     
     format :xml
+    default_timeout 75
 
-    # timeout requests after 20 seconds
-    default_timeout 20
-
-    base_uri "https://spreedlycore.com/#{SpreedlyCore::API_VERSION}"
-
-    def self.configure(login, secret, options = {})
-      @@login = login
-      self.basic_auth(@@login, secret)
+    def self.configure(environment_key, secret, options = {})
+      @@environment_key = environment_key
+      self.basic_auth(@@environment_key, secret)
+      base_uri options[:endpoint]
       @@gateway_token = options.delete(:gateway_token)
     end
 
-    def self.login; @@login; end
+    def self.environment_key; @@environment_key; end
     def self.gateway_token; @@gateway_token; end
     def self.gateway_token=(gateway_token); @@gateway_token = gateway_token; end
 
@@ -65,9 +56,9 @@ module SpreedlyCore
       begin
         response = self.send(request_type, path, options)
       rescue Timeout::Error, Errno::ETIMEDOUT => e
-        raise TimeOutError.new("#{request_type.to_s.upcase } to #{path} timed out. Is Spreedly Core down?")
+        raise TimeOutError.new("#{request_type.to_s.upcase} to #{path} timed out. Is Spreedly down?")
       end
-        
+
       if allowed_codes.any? && !allowed_codes.include?(response.code)
         raise InvalidResponse.new(response, "Error retrieving #{request_type.to_s.upcase} #{base_uri}#{path}. Got status of #{response.code}. Expected status to be in #{allowed_codes.join(",")}. Headers: #{response.headers.inspect}. Request: #{response.request.inspect}. Response: #{response.inspect}")
       end
@@ -93,15 +84,21 @@ module SpreedlyCore
       attrs.each do |k, v|
         instance_variable_set("@#{k}", v)
       end
-      @attrs = attrs
-      # errors may be nil, empty, a string, or an array of strings. 
-      @errors = if @errors.nil? || @errors["error"].blank?
-                  []
-                elsif @errors["error"].is_a?(String)
-                  [@errors["error"]]
-                else
-                  @errors["error"]
-                end
+      # errors may be nil, empty, a string, or an array of strings.
+      @errors = if(@errors.nil? || @errors["error"].blank?)
+        []
+      elsif @errors["error"].is_a?(String)
+        [@errors["error"]]
+      else
+        @errors["error"].collect do |error|
+          case error
+          when Hash
+            error["__content__"]
+          else
+            error
+          end
+        end
+      end
     end
   end
 end

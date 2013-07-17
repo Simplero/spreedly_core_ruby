@@ -1,9 +1,9 @@
 module SpreedlyCore
   class PaymentMethod < Base
-    attr_reader( :address1, :address2, :card_type, :city, :country, :created_at,
-                 :data, :email, :errors, :first_name, :last_four_digits,
-                 :last_name, :month, :number, :payment_method_type, :phone_number,
-                 :state, :token, :updated_at, :verification_value, :year, :zip)
+    attr_reader :address1, :address2, :card_type, :city, :country, :created_at,
+                :data, :email, :errors, :first_name, :last_four_digits,
+                :last_name, :month, :number, :payment_method_type, :phone_number,
+                :state, :token, :updated_at, :verification_value, :year, :zip
 
     # configure additional required fiels. Like :address1, :city, :state
     def self.additional_required_cc_fields *fields
@@ -18,7 +18,7 @@ module SpreedlyCore
 
     # Lookup the PaymentMethod by token
     def self.find(token)
-      return nil if token.nil? 
+      return nil if token.nil?
       verify_get("/payment_methods/#{token}.xml",
                  :has_key => "payment_method") do |response|
         new(response.parsed_response["payment_method"])
@@ -26,7 +26,7 @@ module SpreedlyCore
     end
 
     def self.create(credit_card)
-      verify_post("/payment_methods.xml", :body => {:credit_card => credit_card}) do |response|
+      verify_post("/payment_methods.xml", :body => {:payment_method => { :credit_card => credit_card }}) do |response|
         AddPaymentMethodTransaction.new(response.parsed_response["transaction"])
       end
     end
@@ -52,13 +52,13 @@ module SpreedlyCore
     end
 
     # Make a purchase against the payment method
-    def purchase(amount, currency=nil, _gateway_token=nil, ip_address=nil, order_id=nil, description=nil, redirect_url=nil, callback_url=nil)
-      purchase_or_authorize(:purchase, amount, currency, _gateway_token, ip_address, order_id, description, redirect_url, callback_url)
+    def purchase(amount, *args)
+      purchase_or_authorize(:purchase, amount, *args)
     end
 
     # Make an authorize against payment method. You can then later capture against the authorize
-    def authorize(amount, currency=nil,  _gateway_token=nil, ip_address=nil, order_id=nil, description=nil, redirect_url=nil, callback_url=nil)
-      purchase_or_authorize(:authorize, amount, currency, _gateway_token, ip_address, order_id, description, redirect_url, callback_url)
+    def authorize(amount, *args)
+      purchase_or_authorize(:authorize, amount, *args)
     end
 
     # Update the attributes of a payment method
@@ -82,13 +82,7 @@ module SpreedlyCore
       @errors.empty?
     end
 
-
-
-
-protected
-
-
-
+    protected
 
     # Validate additional cc fields like first_name, last_name, etc when
     # configured to do so
@@ -97,37 +91,49 @@ protected
       @has_been_validated = true
       self.class.additional_required_cc_fields.each do |field|
         if instance_variable_get("@#{field}").blank?
-          str_field= field.to_s
-          friendly_name = if str_field.respond_to?(:humanize)
-                            str_field.humanize
-                          else
-                            str_field.split("_").join(" ")
-                          end
-                            
+          str_field = field.to_s
+          friendly_name = if(str_field.respond_to?(:humanize))
+            str_field.humanize
+          else
+            str_field.split("_").join(" ")
+          end
+
           @errors << "#{friendly_name.capitalize} can't be blank"
         end
       end
       @errors = @errors.sort
     end
 
-    def purchase_or_authorize(tran_type, amount, currency, _gateway_token, ip_address, order_id, description, redirect_url, callback_url)
+    def purchase_or_authorize(tran_type, amount, *args)
+      options = if (args.size == 1 && args.first.kind_of?(Hash))
+        args.first
+      else
+        {
+          :currency      => args[0],
+          :gateway_token => args[1],
+          :ip_address    => args[2]
+        }
+      end
+
       transaction_type = tran_type.to_s
       raise "Unknown transaction type" unless %w{purchase authorize}.include?(transaction_type)
 
-      currency ||= "USD"
-      _gateway_token ||= self.class.gateway_token
-      path = "/gateways/#{_gateway_token}/#{transaction_type}.xml"
+      currency = (options[:currency] || "USD")
+      gateway_token = (options[:gateway_token] || self.class.gateway_token)
+      path = "/gateways/#{gateway_token}/#{transaction_type}.xml"
       data = {
         :transaction => {
-          :transaction_type     => transaction_type, 
-          :payment_method_token => token,
-          :amount               => amount,
-          :currency_code        => currency,
-          :ip                   => ip_address,
-          :order_id             => order_id,
-          :description          => description,
-          :redirect_url         => redirect_url,
-          :callback_url         => callback_url
+          :transaction_type             => transaction_type, 
+          :payment_method_token         => token,
+          :amount                       => amount,
+          :currency_code                => currency,
+          :ip                           => options[:ip_address],
+          :order_id                     => options[:order_id],
+          :description                  => options[:description],
+          :merchant_name_descriptor     => options[:merchant_name_descriptor],
+          :merchant_location_descriptor => options[:merchant_location_descriptor], 
+          :redirect_url                 => options[:redirect_url],
+          :callback_url                 => options[:callback_url]
         }
       }
       self.class.verify_post(path, :body => data,

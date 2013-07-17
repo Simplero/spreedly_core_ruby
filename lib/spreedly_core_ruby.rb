@@ -11,7 +11,7 @@ require 'spreedly_core_ruby/test_gateway'
 require 'spreedly_core_ruby/transactions'
 
 module SpreedlyCore
-  # Hash of user friendly credit card name to SpreedlyCore API name
+  # Hash of user friendly credit card name to Spreedly API name
   CARD_TYPES = {
     "Visa" => "visa",
     "MasterCard" => "master",
@@ -20,9 +20,9 @@ module SpreedlyCore
   }
 
   class Error < RuntimeError; end
-  
-  # Custom exception which occurs when a request to SpreedlyCore times out
-  # See SpreedlyCore::Base.default_timeout 
+
+  # Custom exception which occurs when a request to Spreedly times out
+  # See SpreedlyCore::Base.default_timeout
   class TimeOutError < Error; end
   class InvalidResponse < Error
     def initialize(response, message)
@@ -36,28 +36,28 @@ module SpreedlyCore
     def initialize(errors)
       errors = [errors] unless errors.is_a?(Array)
       @errors = errors
-      
+
       super(errors.join("\n"))
     end
   end
 
-  # Configure SpreedlyCore with a particular account.
+  # Configure Spreedly with a particular account.
   # Strongly prefers environment variables for credentials
   # and will issue a stern warning should they not be present.
-  # Reluctantly accepts :login and :secret as options
+  # Reluctantly accepts :environment_key and :access_secret as options
   def self.configure(options = {})
-    login = ENV['SPREEDLYCORE_API_LOGIN']
-    secret = ENV['SPREEDLYCORE_API_SECRET']
+    environment_key = (ENV["SPREEDLYCORE_ENVIRONMENT_KEY"] || ENV['SPREEDLYCORE_API_LOGIN'])
+    secret = (ENV["SPREEDLYCORE_ACCESS_SECRET"] || ENV['SPREEDLYCORE_API_SECRET'])
     gateway_token = ENV['SPREEDLYCORE_GATEWAY_TOKEN']
 
-    if options[:api_login]
-      Kernel.warn("ENV and arg both present for api_login. Defaulting to arg value") if login
-      login = options[:api_login]
+    if(options[:environment_key] || options[:api_login])
+      Kernel.warn("ENV and arg both present for environment_key. Defaulting to arg value") if environment_key
+      environment_key = (options[:environment_key] || options[:api_login])
     end
 
-    if options[:api_secret]
-      Kernel.warn("ENV and arg both present for api_secret. Defaulting to arg value") if secret
-      secret = options[:api_secret]
+    if(options[:access_secret] || options[:api_secret])
+      Kernel.warn("ENV and arg both present for access_secret. Defaulting to arg value") if secret
+      secret = (options[:access_secret] || options[:api_secret])
     end
 
     if options[:gateway_token]
@@ -66,15 +66,18 @@ module SpreedlyCore
     end
     options[:gateway_token] ||= gateway_token
 
-    if options[:api_login] || options[:api_secret]
-      Kernel.warn("It is STRONGLY preferred that you house your Spreedly Core credentials only in environment variables.")
-      Kernel.warn("This gem prefers only environment variables named SPREEDLYCORE_API_LOGIN, SPREEDLYCORE_API_SECRET, and optionally SPREEDLYCORE_GATEWAY_TOKEN.")
+    if(options[:environment_key] || options[:access_secret])
+      Kernel.warn("It is STRONGLY preferred that you house your Spreedly credentials only in environment variables.")
+      Kernel.warn("This gem prefers only environment variables named SPREEDLYCORE_ENVIRONMENT_KEY, SPREEDLYCORE_ACCESS_SECRET, and optionally SPREEDLYCORE_GATEWAY_TOKEN.")
     end
 
-    if login.nil? || secret.nil?
-      raise ArgumentError.new("You must provide a login and a secret. Gem will look for ENV['SPREEDLYCORE_API_LOGIN'] and ENV['SPREEDLYCORE_API_SECRET'], but you may also pass in a hash with :api_login and :api_secret keys.")
+    if environment_key.nil? || secret.nil?
+      raise ArgumentError.new("You must provide a environment_key and a secret. Gem will look for ENV['SPREEDLYCORE_ENVIRONMENT_KEY'] and ENV['SPREEDLYCORE_ACCESS_SECRET'], but you may also pass in a hash with :environment_key and :access_secret keys.")
     end
-    Base.configure(login, secret, options)
+
+    options[:endpoint] ||= "https://core.spreedly.com/#{SpreedlyCore::API_VERSION}"
+
+    Base.configure(environment_key, secret, options)
   end
 
   def self.gateway_token=(gateway_token)
@@ -85,13 +88,22 @@ module SpreedlyCore
     Base.gateway_token
   end
 
-  # returns the configured SpreedlyCore login
-  def self.login; Base.login; end
+  # returns the configured Spreedly environment key
+  def self.environment_key; Base.environment_key; end
 
   # A container for a response from a payment gateway
   class Response < Base
-    attr_reader(:success, :message, :avs_code, :avs_message, :cvv_code,
-                :cvv_message, :error_code, :error_detail, :created_at,
-                :updated_at) 
+    attr_reader(
+      :success,
+      :message,
+      :avs_code,
+      :avs_message,
+      :cvv_code,
+      :cvv_message,
+      :error_code,
+      :error_detail,
+      :created_at,
+      :updated_at
+    )
   end
 end

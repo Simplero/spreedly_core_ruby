@@ -3,7 +3,7 @@ require 'test_common'
 
 # In order to run tests
 #  1. cp test/config/spreedly_core.yml.example to test/config/spreedly_core.yml
-#  2. Add your spreedly core credentials to test/config/spreedly_core.yml
+#  2. Add your spreedly credentials to test/config/spreedly_core.yml
 module SpreedlyCore
   class SpreedlyCoreTest < Test::Unit::TestCase
     include TestCommon
@@ -28,23 +28,41 @@ module SpreedlyCore
       assert_equal 4, payment_method.month
       assert_equal 2015, payment_method.year
     end
-  
+
+    def test_payment_token_with_multiple_errors
+      response = HTTParty.post(
+        "https://core.spreedly.com/v1/payment_methods",
+        body: [
+          "environment_key=#{SpreedlyCore.environment_key}",
+          "redirect_url=http://example.com",
+          "credit_card[number]=4111111111111111"
+        ].join("&"),
+        format: :plain,
+        follow_redirects: false
+      )
+      token = response.headers["location"].split("token=").last
+      assert payment_method = SpreedlyCore::PaymentMethod.find(token)
+      assert_nil payment_method.first_name
+      assert_nil payment_method.last_name
+      assert !payment_method.errors.empty?, payment_method.errors.inspect
+    end
+
     def test_can_find_payment_method
       payment_method = given_a_payment_method
       assert PaymentMethod.find(payment_method.token)
     end
-  
+
     def test_not_found_payment_method
       assert_raises InvalidResponse do
         PaymentMethod.find("NOT-FOUND")
       end
     end
-    
+
     def test_can_retain_payment_method
       given_a_retained_transaction
     end
-  
-    # Here we change the token to get an invalid response from spreedly core
+
+    # Here we change the token to get an invalid response from spreedly
     def test_bad_response_on_retain
       payment_method = given_a_payment_method
       payment_method.instance_variable_set("@token", "NOT-FOUND")
@@ -52,7 +70,7 @@ module SpreedlyCore
         payment_method.retain
       end
     end
-  
+
     def test_can_not_retain_after_redact
       retained_transaction = given_a_retained_transaction
       payment_method = retained_transaction.payment_method
@@ -61,12 +79,12 @@ module SpreedlyCore
       retained_transaction2 = payment_method.retain
       assert_false retained_transaction2.succeeded?
     end
-  
+
     def test_can_redact_payment_method
       given_a_redacted_transaction
     end
-  
-    # Here we change the token to get an invalid response from spreedly core
+
+    # Here we change the token to get an invalid response from spreedly
     def test_bad_response_on_redact
       payment_method = given_a_payment_method
       payment_method.instance_variable_set("@token", "NOT-FOUND")
@@ -74,12 +92,12 @@ module SpreedlyCore
         payment_method.redact
       end
     end
-  
+
     def test_can_make_purchase
       given_a_purchase
     end
-  
-    # Here we change the token to get an invalid response from spreedly core
+
+    # Here we change the token to get an invalid response from spreedly
     def test_bad_response_on_purchase
       payment_method = given_a_payment_method
       payment_method.instance_variable_set("@token", "NOT-FOUND")
@@ -87,12 +105,12 @@ module SpreedlyCore
         payment_method.purchase(20)
       end
     end
-  
+
     def test_can_authorize
       given_an_authorized_transaction
     end
-  
-    # Here we change the token to get an invalid response from spreedly core
+
+    # Here we change the token to get an invalid response from spreedly
     def test_bad_response_on_authorize
       payment_method = given_a_payment_method
       payment_method.instance_variable_set("@token", "NOT-FOUND")
@@ -100,26 +118,26 @@ module SpreedlyCore
         payment_method.authorize(20)
       end
     end
-  
+
     def test_payment_failed
       payment_method = given_a_payment_method(:master, :card_number => :failed)
-  
+
       assert transaction = payment_method.purchase(100)
       assert !transaction.succeeded?
 
-      assert_equal "Unable to process the transaction.", transaction.message, transaction.inspect
-      assert_equal "Unable to process the transaction.", transaction.response.message, transaction.inspect
+      assert_equal "Unable to process the purchase transaction.", transaction.message, transaction.inspect
+      assert_equal "Unable to process the purchase transaction.", transaction.response.message, transaction.inspect
     end
-  
+
     def test_can_capture_after_authorize
       given_a_capture
     end
-  
+
     def test_can_capture_partial_after_authorize
       given_a_capture 50
     end
-  
-    # Here we change the token to get an invalid response from spreedly core
+
+    # Here we change the token to get an invalid response from spreedly
     def test_bad_response_on_capture_after_authorize
       transaction = given_an_authorized_transaction
       transaction.instance_variable_set("@token", "NOT-FOUND")
@@ -127,12 +145,12 @@ module SpreedlyCore
         transaction.capture
       end
     end
-  
+
     def test_can_void_after_purchase
       given_a_purchase_void
     end
-  
-    # Here we change the token to get an invalid response from spreedly core
+
+    # Here we change the token to get an invalid response from spreedly
     def test_bad_response_on_void
       purchase = given_a_purchase
       purchase.instance_variable_set("@token", "NOT-FOUND")
@@ -140,16 +158,16 @@ module SpreedlyCore
         purchase.void
       end
     end
-  
+
     def test_can_void_after_capture
       given_a_capture_void
     end
-  
+
     def test_can_credit_after_purchase
       given_a_purchase_credit
     end
-  
-    # Here we change the token to get an invalid response from spreedly core
+
+    # Here we change the token to get an invalid response from spreedly
     def test_bad_response_on_credit
       purchase = given_a_purchase
       purchase.instance_variable_set("@token", "NOT-FOUND")
@@ -157,38 +175,38 @@ module SpreedlyCore
         purchase.credit
       end
     end
-  
+
     def test_can_credit_partial_after_purchase
       given_a_purchase_credit(100, 50)
     end
-    
+
     def test_can_credit_after_capture
       given_a_capture_credit
     end
-    
+
     def test_can_credit_partial_after_capture
       given_a_capture_credit(50, 25)
     end
-  
-    
+
     def test_can_enforce_additional_payment_method_validations
       PaymentMethod.additional_required_cc_fields :state
-  
+
       token = PaymentMethod.create_test_token(cc_data(:master))
       assert payment_method = PaymentMethod.find(token)
       assert !payment_method.valid?
       assert_equal 1, payment_method.errors.size
-  
+
       assert_equal "State can't be blank", payment_method.errors.first
-  
-      token =  PaymentMethod.
-        create_test_token(cc_data(:master, :credit_card => {:state => "IL"}))
-  
+
+      token =  PaymentMethod.create_test_token(
+        cc_data(:master, :credit_card => {:state => "IL"})
+      )
+
       assert payment_method = PaymentMethod.find(token)
-  
+
       assert payment_method.valid?
     end
-  
+
     def test_can_list_supported_gateways
       assert Gateway.supported_gateways.any?
     end

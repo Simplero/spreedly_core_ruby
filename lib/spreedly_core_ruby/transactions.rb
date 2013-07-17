@@ -1,12 +1,13 @@
 require 'openssl'
 
 module SpreedlyCore
-  # Abstract class for all the different spreedly core transactions
+  # Abstract class for all the different spreedly transactions
   class Transaction < Base
     attr_reader(:amount, :on_test_gateway, :created_at, :updated_at, :currency_code,
-                :succeeded, :state, :token, :transaction_type, :order_id, :ip, :description, :callback_url,
-                :checkout_url, :redirect_url, :message, :gateway_token,
-                :response)
+                :succeeded, :token, :message, :transaction_type, :gateway_token,
+                :response, :signed, :state, :checkout_url, 
+                :order_id, :description, :merchant_name_descriptor, :merchant_location_descriptor,
+                :ip, :callback_url, :redirect_url)
     alias :succeeded? :succeeded
 
     # Breaks enacapsulation a bit, but allow subclasses to register the 'transaction_type'
@@ -18,11 +19,13 @@ module SpreedlyCore
 
     # Lookup the transaction by its token. Returns the correct subclass
     def self.find(token)
-      return nil if token.nil? 
+      return nil if token.nil?
       verify_get("/transactions/#{token}.xml", :has_key => "transaction") do |response|
         attrs = response.parsed_response["transaction"]
         klass = @@transaction_type_to_class[attrs["transaction_type"]] || self
-        klass.new(attrs)
+        klass.new(attrs).tap do |transaction|
+          transaction.verified!
+        end
       end
     end
 
@@ -31,28 +34,56 @@ module SpreedlyCore
         response.body
       end
     end
+    
+    def initialize(attrs={})
+      super
+      if(valid_signature?)
+        verified!
+      end
+    end
+
+    def verified!
+      @verified = true
+    end
+
+    def verified?
+      @verified
+    end
+
+    def pending?
+      state == "pending"
+    end
+
+    def valid_signature?
+      return false unless signed
+      fields = signed["fields"]
+      data = fields.collect do |field|
+        self.instance_variable_get("@#{field}")
+      end.join("|")
+      (OpenSSL::HMAC.hexdigest(OpenSSL::Digest::Digest.new(signed["algorithm"], SpreedlyCore::Base.secret, data)) == signed["signature"])
+    end
   end
 
   class RetainTransaction < Transaction
     handles "RetainPaymentMethod"
     attr_reader :payment_method
-    
+
     def initialize(attrs={})
       @payment_method = PaymentMethod.new(attrs.delete("payment_method") || {})
       super(attrs)
     end
   end
-  
+
   class RedactTransaction < Transaction
     handles "RedactPaymentMethod"
     attr_reader :payment_method
-    
+
     def initialize(attrs={})
       @payment_method = PaymentMethod.new(attrs.delete("payment_method") || {})
       super(attrs)
     end
   end
-  
+
   module NullifiableTransaction
     # Void is used to cancel out authorizations and, with some gateways, to
     # cancel actual payment transactions within the first 24 hours
@@ -61,13 +92,13 @@ module SpreedlyCore
       self.class.verify_post("/transactions/#{token}/void.xml",
                              :body => body, :has_key => "transaction") do |response|
         VoidedTransaction.new(response.parsed_response["transaction"])
-      end      
+      end
     end
 
     # Credit amount. If amount is nil, then credit the entire previous purchase
-    # or captured amount 
+    # or captured amount
     def credit(amount=nil, ip_address=nil)
-      body = if amount.nil? 
+      body = if amount.nil?
                {:ip => ip_address}
              else
                {:transaction => {:amount => amount, :ip => ip_address}}
@@ -85,10 +116,10 @@ module SpreedlyCore
 
   class AuthorizeTransaction < Transaction
     include HasIpAddress
-    
+
     handles "Authorization"
     attr_reader :payment_method
-    
+
     def initialize(attrs={})
       @payment_method = PaymentMethod.new(attrs.delete("payment_method") || {})
       @response = Response.new(attrs.delete("response") || {})
@@ -129,21 +160,21 @@ module SpreedlyCore
   class CaptureTransaction < Transaction
     include NullifiableTransaction
     include HasIpAddress
-    
+
     handles "Capture"
     attr_reader :reference_token
   end
 
   class VoidedTransaction < Transaction
     include HasIpAddress
-    
+
     handles "Void"
     attr_reader :reference_token
   end
 
   class CreditTransaction < Transaction
     include HasIpAddress
-    
+
     handles "Credit"
     attr_reader :reference_token
   end
