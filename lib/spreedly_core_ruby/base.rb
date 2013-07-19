@@ -79,10 +79,13 @@ module SpreedlyCore
       end
     end
 
+    attr_reader :attrs
+
     # Given a hash of attrs, assign instance variables using the hash key as the
     # attribute name and hash value as the attribute value
     #
     def initialize(attrs={})
+      @attrs = attrs
       attrs.each do |k, v|
         instance_variable_set("@#{k}", v)
       end
