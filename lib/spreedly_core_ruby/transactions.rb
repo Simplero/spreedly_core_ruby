@@ -202,29 +202,6 @@ module SpreedlyCore
     end
     
     MIN_FIELDS = %w(amount created_at currency_code ip on_test_gateway order_id state succeeded token transaction_type updated_at)
-
-    def signature_for(secret, xml)
-      document = Nokogiri::XML(xml)
-      algorithm = document.xpath("//transaction/signed/algorithm").text
-
-      fields = document.xpath("//transaction/signed/fields").text.split(" ")
-      raise "Missing signature fields: #{MIN_FIELDS - fields}" unless (MIN_FIELDS - fields).empty?
-
-      values = fields.collect do |field|
-        document.xpath("//transaction/#{field}").text
-      end
-
-      signature_data = values.join("|")
-      OpenSSL::HMAC.hexdigest(
-        OpenSSL::Digest.new(algorithm),
-        secret,
-        signature_data
-      )
-    end
-    
-    def valid_signature?(secret, xml)
-      signed['signature'] == signature_for(secret, xml)
-    end
   end
 end
 
